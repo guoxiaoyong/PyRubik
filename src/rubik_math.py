@@ -6,17 +6,16 @@ import numpy as np
 class Rubik(object):
   def __init__(self):
     r = range(-1,2)
-    x,y,z = np.meshgrid(r, r, r)
+    x, y, z = np.meshgrid(r, r, r)
     x = x.flatten()
     y = y.flatten()
     z = z.flatten()
-    c = np.vstack((x,y,z)).T
+    c = np.vstack((x, y, z)).T
     I = np.identity(3)
-    fun = lambda x: np.vstack((I,x)).T
-    self.state = map(fun, c)
+    self.state = [np.vstack((I, x)).T for x in c]
 
-    fun = lambda x: sum(abs(x[:,3])) >= 2
-    self.state = filter(fun, self.state)
+    self.state = [x for x in self.state \
+                    if  sum(abs(x[:,3])) >= 2]
     self.solved = copy.deepcopy(self.state)
 
     F = np.array([[+0,-1,+0], [+1,+0,+0],[+0,+0,+1]])
@@ -92,4 +91,4 @@ class Rubik(object):
 
 
 rubik = Rubik()
-print rubik.order('rURU')
+print rubik.order('ru')
