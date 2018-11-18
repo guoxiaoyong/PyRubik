@@ -8,7 +8,7 @@ import numpy as np
 class Cube(object):
   def __init__(self, center, radius, transform=None):
     self._center = center
-    self._radius = radius 
+    self._radius = radius
     self._transform = transform
 
     self._front = [self._vertex((+1,+1,+1)),
@@ -43,7 +43,7 @@ class Cube(object):
 
   def _vertex(self, x):
     x = np.array([x[0], x[1], x[2]])
-    return self._center + self._radius*x 
+    return self._center + self._radius*x
 
   def render(self):
     glBegin(GL_QUADS)
@@ -92,8 +92,8 @@ def main():
       if event.type == pygame.QUIT:
         pygame.quit()
         quit()
-        print "Quit event!"
-     
+        print("Quit event!")
+
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
     cube.render()
     glRotatef(1,5,1,1)
@@ -101,4 +101,3 @@ def main():
     pygame.time.wait(10)
 
 main()
-

@@ -1,94 +1,93 @@
 # author: Xiaoyong Guo
-import pdb
+
 import copy
+
 import numpy as np
 
-class Rubik(object):
-  def __init__(self):
-    r = range(-1,2)
+
+MAX_ORDER = 10000
+
+
+def _generate_rubik_states():
+    r = [-1, 0, 1]
     x, y, z = np.meshgrid(r, r, r)
     x = x.flatten()
     y = y.flatten()
     z = z.flatten()
     c = np.vstack((x, y, z)).T
-    I = np.identity(3)
-    self.state = [np.vstack((I, x)).T for x in c]
+    state = [np.vstack((np.identity(3), x)).T for x in c]
+    return [x for x in state if sum(abs(x[:, 3])) >= 2]
 
-    self.state = [x for x in self.state \
-                    if  sum(abs(x[:,3])) >= 2]
-    self.solved = copy.deepcopy(self.state)
 
-    F = np.array([[+0,-1,+0], [+1,+0,+0],[+0,+0,+1]])
-    B = np.array([[+0,+1,+0], [-1,+0,+0],[+0,+0,+1]])
-    R = np.array([[+1,+0,+0], [+0,+0,-1],[+0,+1,+0]])
-    L = np.array([[+1,+0,+0], [+0,+0,+1],[+0,-1,+0]])
-    U = np.array([[+0,+0,-1], [+0,+1,+0],[+1,+0,+0]])
-    D = np.array([[+0,+0,+1], [+0,+1,+0],[-1,+0,+0]])
+# noinspection PyPep8Naming
+def _generate_rubik_transform():
+    F = np.array([[+0, -1, +0], [+1, +0, +0], [+0, +0, +1]])
+    B = np.array([[+0, +1, +0], [-1, +0, +0], [+0, +0, +1]])
+    R = np.array([[+1, +0, +0], [+0, +0, -1], [+0, +1, +0]])
+    L = np.array([[+1, +0, +0], [+0, +0, +1], [+0, -1, +0]])
+    U = np.array([[+0, +0, -1], [+0, +1, +0], [+1, +0, +0]])
+    D = np.array([[+0, +0, +1], [+0, +1, +0], [-1, +0, +0]])
 
-    tF = lambda x: np.dot(F,x)
-    tB = lambda x: np.dot(B,x)
-    tR = lambda x: np.dot(R,x)
-    tL = lambda x: np.dot(L,x)
-    tU = lambda x: np.dot(U,x)
-    tD = lambda x: np.dot(D,x)
+    fru = {
+      'f': (lambda x: x[2][3] == +1, lambda x: np.dot(F, x)),
+      'b': (lambda x: x[2][3] == -1, lambda x: np.dot(B, x)),
+      'r': (lambda x: x[0][3] == +1, lambda x: np.dot(R, x)),
+      'l': (lambda x: x[0][3] == -1, lambda x: np.dot(L, x)),
+      'u': (lambda x: x[1][3] == +1, lambda x: np.dot(U, x)),
+      'd': (lambda x: x[1][3] == -1, lambda x: np.dot(D, x)),
+    }
+    return fru
 
-    isF = lambda x: x[2][3] == +1
-    isB = lambda x: x[2][3] == -1
-    isR = lambda x: x[0][3] == +1
-    isL = lambda x: x[0][3] == -1
-    isU = lambda x: x[1][3] == +1
-    isD = lambda x: x[1][3] == -1
 
-    self.fru = { 'f': (isF, tF), 
-                 'b': (isB, tB),
-                 'r': (isR, tR),
-                 'l': (isL, tL), 
-                 'u': (isU, tU),
-                 'd': (isD, tD) };
-
-  def atom_transform(self, t):
-    assert t in set('fbrlud')
-    for n, s in enumerate(self.state):
-      if self.fru[t][0](s): 
-        self.state[n] = self.fru[t][1](s)
-
-  def compile(self, code):
+def rubik_compile(code):
     if len(code) == 0:
-      return ''
+        return ''
 
     assert set(code.lower()) <= set('fbrlud123')
     assert code[0].lower() in set('fbrlud')
 
     result = []
     for c in code:
-      if c.islower():  
-         result.append(c)
-      elif c.isupper():
-         result.append(c.lower()*3)
-      else:
-         result.append(result[-1]*(int(c)-1))
-
+        if c.islower():
+            result.append(c)
+        elif c.isupper():
+            result.append(c.lower()*3)
+        else:
+            result.append(result[-1]*(int(c)-1))
     return ''.join(result)
 
-  def transform(self, t):
-    code = self.compile(t)
-    for c in code:
-      self.atom_transform(c)
 
-  def is_solved(self):
-    fun = lambda x, y: (x==y).all()
-    return all(map(fun, self.state, self.solved))
-
-  def order(self, code):
-    n = 0
-    while True:
-      n += 1 
-      rubik.transform(code)
-      if rubik.is_solved(): 
-        return n
-      if n > 10000:
+def rubik_order(code):
+    rubik = Rubik()
+    for n in range(MAX_ORDER):
+        rubik.transform(code)
+        if rubik.is_solved():
+            break
+    else:
         raise Exception("something wrong!")
 
+    return n+1
 
-rubik = Rubik()
-print rubik.order('ru')
+
+class Rubik(object):
+    def __init__(self):
+        self.state = _generate_rubik_states()
+        self.solved = copy.deepcopy(self.state)
+        self.fru = _generate_rubik_transform()
+
+    def atom_transform(self, t):
+        assert t in set('fbrlud')
+        for n, s in enumerate(self.state):
+            if self.fru[t][0](s):
+                self.state[n] = self.fru[t][1](s)
+
+    def transform(self, t):
+        code = rubik_compile(t)
+        for c in code:
+            self.atom_transform(c)
+
+    def is_solved(self):
+        def fun(x: np.array, y: np.array):
+            # noinspection PyUnresolvedReferences
+            return (x == y).all()
+        return all(map(fun, self.state, self.solved))
