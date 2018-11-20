@@ -1,11 +1,13 @@
 # author: Xiaoyong Guo
 
 import copy
+import sys
 
 import numpy as np
 
 
 MAX_ORDER = 10000
+NUM_POSITIONS = (3**7) * (2**10) * ((2*3*4*5*6*7*8)**2) * 9 * 10 * 11 * 12
 
 
 def _generate_rubik_states():
@@ -91,3 +93,14 @@ class Rubik(object):
             # noinspection PyUnresolvedReferences
             return (x == y).all()
         return all(map(fun, self.state, self.solved))
+
+
+def main(argv):
+    code = argv[1]
+    n_order = rubik_order(code)
+    print('order = %s' % n_order)
+
+
+if __name__ == '__main__':
+    print(NUM_POSITIONS)
+    main(sys.argv)
