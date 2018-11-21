@@ -103,4 +103,5 @@ def main(argv):
 
 if __name__ == '__main__':
     print(NUM_POSITIONS)
+    print(6**26/NUM_POSITIONS)
     main(sys.argv)
